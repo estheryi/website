@@ -1,0 +1,225 @@
+---
+title: "Project 1: Data Wrangling and Exploratory Analysis"
+author: "Esther Yi"
+date: "2020-05-13"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
+
+
+```{r}
+tinytex::install_tinytex()
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(forcats)
+
+#data
+wb<-read.csv("worldbank.csv",header = TRUE)
+glimpse(wb)
+sars<-read.csv("SARS.csv",header = TRUE)
+glimpse(sars)
+
+```
+With all the corona virus happening worldwide, I wanted to study one previous disease that struck the world a few years ago and possibly find any correlations or factors that could possibly lead to an outbreak of a pandemic, which could hopefully give a clue to this current chaos with corona virus. The disease I chose is SARS, Severe Acute Respiratory Syndrome, which appeared in 2003. I used 3 dataset for this project. The dataset, SARS, is imported from Kaggle.com and this data has 5 variables, including date, country, number of deaths, recovery and cases. The other dataset, wb, is from World Bank. WB has 20 variables, 4 of which are series.name, series.code, country.name and country.code and the rest are years. The series.name lists 51 factors that could have affected in the outbreak of SARS. I intend to pick some factors from these 51 and find any correlation. 
+
+## Tidying
+
+```{r }
+mywb <- wb %>% select(Country.Name, Series.Name, X2002..YR2002.)
+mywb <- mywb %>% pivot_wider(names_from = Series.Name, 
+                                values_from = X2002..YR2002. )
+dim(mywb)
+
+```
+I chose 3 variables to look at, Series.Name, Country.Name and X2002..YR2002. I only intend to look at data from the year 2002, which is one year before the outbreak of SARS. I used pivot_wider function to make factors under Series.Name into separate columns. 
+
+## Joining/Merging
+
+```{r}
+sarsfinal <- sars %>% group_by(Country) %>% arrange(Country) %>% mutate(n=n()) %>% slice(n())
+view(sarsfinal)
+mywb <- mywb %>% rename(Country=Country.Name)
+mydata <- mywb %>% inner_join(sarsfinal, by="Country")
+view(mydata)
+```
+SARS dataset had cumulative data, so I selected the last data of each country and stored it as sarsfinal. Since mywb had country names under a variable named Country.Name, I renamed the variable name to Country so that I can use innerjoin function by Country. After fixing this, I used inner_join by Country to combine sarsfinal dataset and mywb. I stored this combined dataset into mydata and will be using this set for the following tasks. 
+
+## Wrangling 
+
+```{r}
+#select, rename
+mydata <- mydata%>%select(Country,`Population, total`, `GDP (current US$)`, `Immunization, measles (% of children ages 12-23 months)`,Cumulative.number.of.case.s., Number.of.deaths, Number.recovered) %>% rename(cumcase=Cumulative.number.of.case.s., 
+                  deaths=Number.of.deaths,
+                  recovery=Number.recovered,
+                  gdp=`GDP (current US$)`,
+                  immunization=`Immunization, measles (% of children ages 12-23 months)`,
+                  ppn=`Population, total`)
+glimpse(mydata)
+mydata <- transform(mydata,
+                    ppn=as.numeric(ppn),
+                    gdp=as.numeric(gdp),
+                    immunization=as.numeric(immunization)
+                    )
+
+#arrange, mutate
+mydata <- mydata %>% arrange(Country) %>% 
+  mutate(prop.deaths=deaths/cumcase, prop.recovery=recovery/cumcase)
+glimpse(mydata)
+
+#filter
+max.deaths <- mydata %>% filter(prop.deaths==max(prop.deaths))
+max.recovery <- mydata %>% filter(prop.recovery==max(prop.recovery))
+
+#grouping using mutate
+mydata <- mydata %>% mutate(region=fct_collapse(Country,
+                    Asia=c("Australia","China","Hong Kong SAR, China",
+                    "India","Indonesia","Japan","South Korea","Kuwait",
+                    "Macao SAR, China", "Malaysia","Mongolia","New Zealand",
+                   "Philippines","Singapore","Thailand"),
+            Africa=c("South Africa"),          
+            Europe=c("Belgium", "Bulgaria","Finland","France",
+                    "Germany","Ireland","Italy", "Poland","Romania",
+                    "Russian Federation","Slovenia", "Spain","Sweden",
+                    "Switzerland", "United Kingdom"),
+            America=c("Brazil","Canada","Colombia","United States")
+            ))
+glimpse(mydata)
+
+#group_by, summarize
+stat.result <- mydata %>% group_by(region) %>%
+  summarize(
+    cumcase.r=sum(cumcase),
+        deaths.r=sum(deaths),
+    recovery.r=sum(recovery),
+    prop.deaths.r=deaths.r/cumcase.r,
+    prop.recovery.r=recovery.r/cumcase.r,
+    mean.cumcase=mean(cumcase),
+    mean.recovery=mean(recovery),
+    mean.deaths=mean(deaths),
+    cor.cumcase.deaths=cor(cumcase,deaths),
+    cor.cumcase.recovery=cor(cumcase,recovery),
+    cor.deaths.recovery=cor(deaths,recovery),
+    cor.cumcase.ppn=cor(cumcase,ppn),
+    cor.cumcase.gdp=cor(cumcase,gdp)
+  )
+glimpse(stat.result)
+
+#Correlation Matrix
+mydata %>% select_if(is.numeric) %>% cor %>% as.data.frame %>%
+  rownames_to_column %>% pivot_longer(-1) %>%
+  ggplot(aes(rowname, name, fill=value))+geom_tile()+
+  geom_text(aes(label=round(value,2)))+
+  labs(title="Correlation Matrix")+
+  scale_fill_gradient2(low="red",high="blue")+
+  theme(axis.text.x = element_text(angle=90))
+
+```
+First of all, I used select function to only choose the variables that I'm interested in and then renamed them more precisely. The variables I intend to look at are cumulative number of cases (cumcase), number of deaths (deaths), number of recovery (recovery), gdp, immunization and total population (ppn). Since the data was not in numerical format, for later processes like correlation, I transformed the ppn, gdp and immunization variable to numerical variable. This was done using a transform function then I stored this new dataset to mydata. To organize the dataset by country, in alphabetical order, I used arrange function. Then I used mutate function to create two new variables called prop.deaths and prop.recovery, which show proportion of deaths and recovery in total number of SARS cases. There being 35 countries total, I wanted to group them by continent. I used mutate function to make variable region, under which are subgroups, Asia, Africa, Europe and America. And by group, I calculated sum, proportion, mean and also correlations using summarize function. Especially for correlation part, I found correlation between two variables, every possible combinations from mydata dataset.Using this correlation, I drew a correlation matrix. First of all, I had to make sure the data was numerical by using select_if (is.numeric). Once I made the correlation matrix, I used ggplot with geom_tile() to make the correlation matrix. Looking at the correlation matrix, there was a high correlation between cumcase and deaths (0.92).
+
+##Visualizing 
+
+```{r}
+# Plots
+
+# Boxplot of Confirmed Cases for overall cases
+mydata %>% filter(region !="Africa") %>%
+  ggplot(aes(x=region, y=cumcase))+
+  geom_boxplot()+
+  labs(title="Plot of confirmed cases for all countries",
+     x="Region", y="No. Cases",
+     caption = "Africa is removed for only one observation.")+
+  theme(plot.title = element_text(color = "blue", size = 12, face = "bold"))
+
+
+# Boxplot of Confirmed Cases
+mydata %>% filter((region !="Africa")&(cumcase<100)) %>%
+  ggplot(aes(x=region, y=cumcase, fill=region)) +
+  geom_boxplot(alpha=0.7) +
+  stat_summary(fun=mean, geom="point", shape=20, size=7, color="red", fill="red") +
+  scale_fill_brewer(palette="Set1")+
+  labs(title="Plot of confirmed cases with removing outliers ",
+       subtitle="Countries with less than 100 cases.",
+       x="Region", y="No. Cases",
+      caption = "Africa is removed-only one observation.Red circle denotes mean.") +
+  theme(plot.title = element_text(color = "blue", size = 12, face = "bold"))
+
+# Plot of deathrate
+stat.result %>% na.omit() %>%
+  ggplot()+
+   geom_bar(aes(x=region,y=prop.deaths.r,fill=region),stat="identity")+
+   labs(title="Plot of deathrate among confirmed cases",
+        x="Region", y="Deatrate",
+        caption = "Africa is removed.") +
+   theme(plot.title = element_text(color = "blue", size = 12, face = "bold"))
+```
+I made 3 plots, first one showing number of cumulative cases for SARS in each region. Since Africa had one case, I removed this data from the plot because this wasn't a representative value and could distract the meaning of this overall plot. The second plot I made is a boxplot, with Africa data removed, as well. For this boxplot, to remove any outliers, I removed data whose number of cumulative cases was bigger than 100. Then I used ggplot and geom_boxplot to create boxplot for the countries with number of confirmed cases of SARS. The last plot I made was plot of death rates among the confirmed cases. Africa was removed in this plot as well.
+
+##PCA
+
+```{r}
+# Make correlation matrix  
+mycorr <- mydata %>% select_if(is.numeric) %>% na.omit %>%
+  select(-c(prop.deaths,prop.recovery)) %>% cor %>% round(2)
+sars_pca <- princomp(mycorr)
+names(sars_pca)
+summary(sars_pca,loadings=T)
+
+# How many PCs to keep?
+eigval <- sars_pca$sdev^2
+varprop=round(eigval/sum(eigval),2)
+ggplot()+geom_bar(aes(y=varprop, x=1:6), stat="identity")+
+  xlab("")+geom_path(aes(y=varprop,x=1:6))+
+  geom_text(aes(x=1:6, y=varprop,label=round(varprop,2)), vjust=1,
+            col="white", size=5)+
+  scale_y_continuous(breaks=seq(0,0.6,.2),labels = scales::percent)+
+  scale_x_continuous(breaks=1:6)+
+  labs(title="Scree Plot")
+
+# Decide number of PCs as 3 from the previous scree plot
+# See the cumulative proportion of variance
+round(cumsum(eigval)/sum(eigval),2)
+# eigenvalues
+round(eigval,2)
+# See the components to interprete components
+summary(sars_pca, loadings=T)
+#PC1 : all loadings/coefs have +sign for world bank data
+# which relects the economic status
+# while negative sign for the sars data.
+# Thus the higher the economic status is, the stronger the PC1 is
+# PC2: has positive sign only for population size
+#  which implies the larger the population, the PC2 is stronger.
+# PC3: the sum of ppn and immunizatin is almost opposite of gpd.
+
+# Plot to see the contributions of variables to PCs
+
+# To PC1 and PC2
+sars_pca$loadings[1:6,1:2] %>% as.data.frame %>% rownames_to_column %>%
+  ggplot()+geom_hline(aes(yintercept=0), lty=2)+
+  geom_vline(aes(xintercept=0),lty=2)+ylab("PC2")+xlab("PC1")+
+  geom_segment(aes(x=0,y=0,xend=Comp.1, yend=Comp.2),
+                arrow=arrow(),col="red")+
+  geom_label(aes(x=Comp.1*1.1, y=Comp.2*1.1, label=rowname))+
+  labs(title="Contribution of Variables to PCs")
+
+# ppn gdp immunization has positive value for PC1,
+# while deaths, cases, recovery has negative value for PC1
+# therefore economic factors determines value of PC1.
+
+# To PC2 and PC3
+sars_pca$loadings[1:6,2:3] %>% as.data.frame %>% rownames_to_column %>%
+  ggplot()+geom_hline(aes(yintercept=0), lty=2)+
+  geom_vline(aes(xintercept=0),lty=2)+ylab("PC3")+xlab("PC2")+
+  geom_segment(aes(x=0,y=0,xend=Comp.2, yend=Comp.3),
+               arrow=arrow(),col="red")+
+  geom_label(aes(x=Comp.2*1.1, y=Comp.3*1.1, label=rowname))+
+  labs(title="Contribution of Variables to PCs")
+
+```
+Most of the process are explained above, with the code. Plot interpretations will be written here. The plots show how different variables affect PC1, PC2 and PC3. To PC1 and PC2, ppn, immunization and gdp have positive value (effect) for PC1, while deaths, cases and recovery have negative value (effect) on PC1. Thus, I could conclude that economic factors have significant impact on PC1. To PC2 and PC3, ppn has positive effect on PC2, while immunization has positive effect on PC3 and gdp a negative effect on PC3. 

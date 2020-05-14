@@ -1,0 +1,295 @@
+---
+title: "Project 1: Data Wrangling and Exploratory Analysis"
+author: "Esther Yi"
+date: "2020-05-13"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+
+<pre class="r"><code>tinytex::install_tinytex()
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(forcats)
+
+# data
+wb &lt;- read.csv(&quot;worldbank.csv&quot;, header = TRUE)
+glimpse(wb)</code></pre>
+<pre><code>## Observations: 11,067
+## Variables: 20
+## $ Series.Name    &lt;fct&gt; &quot;Population, total&quot;, &quot;Population, total&quot;, &quot;Population,…
+## $ Series.Code    &lt;fct&gt; SP.POP.TOTL, SP.POP.TOTL, SP.POP.TOTL, SP.POP.TOTL, SP…
+## $ Country.Name   &lt;fct&gt; &quot;Afghanistan&quot;, &quot;Albania&quot;, &quot;Algeria&quot;, &quot;American Samoa&quot;,…
+## $ Country.Code   &lt;fct&gt; AFG, ALB, DZA, ASM, AND, AGO, ATG, ARG, ARM, ABW, AUS,…
+## $ X2000..YR2000. &lt;fct&gt; 20779953, 3089027, 31042235, 57821, 65390, 16395473, 7…
+## $ X2001..YR2001. &lt;fct&gt; 21606988, 3060173, 31451514, 58494, 67341, 16945753, 7…
+## $ X2002..YR2002. &lt;fct&gt; 22600770, 3051010, 31855109, 59080, 70049, 17519417, 7…
+## $ X2003..YR2003. &lt;fct&gt; 23680871, 3039616, 32264157, 59504, 73182, 18121479, 7…
+## $ X2004..YR2004. &lt;fct&gt; 24726684, 3026939, 32692163, 59681, 76244, 18758145, 8…
+## $ X2005..YR2005. &lt;fct&gt; 25654277, 3011487, 33149724, 59562, 78867, 19433602, 8…
+## $ X2006..YR2006. &lt;fct&gt; 26433049, 2992547, 33641002, 59107, 80993, 20149901, 8…
+## $ X2007..YR2007. &lt;fct&gt; 27100536, 2970017, 34166972, 58365, 82684, 20905363, 8…
+## $ X2008..YR2008. &lt;fct&gt; 27722276, 2947314, 34730608, 57492, 83862, 21695634, 8…
+## $ X2009..YR2009. &lt;fct&gt; 28394813, 2927519, 35333881, 56683, 84463, 22514281, 8…
+## $ X2010..YR2010. &lt;fct&gt; 29185507, 2913021, 35977455, 56079, 84449, 23356246, 8…
+## $ X2011..YR2011. &lt;fct&gt; 30117413, 2905195, 36661444, 55759, 83747, 24220661, 8…
+## $ X2012..YR2012. &lt;fct&gt; 31161376, 2900401, 37383887, 55667, 82427, 25107931, 9…
+## $ X2013..YR2013. &lt;fct&gt; 32269589, 2895092, 38140132, 55713, 80774, 26015780, 9…
+## $ X2014..YR2014. &lt;fct&gt; 33370794, 2889104, 38923687, 55791, 79213, 26941779, 9…
+## $ X2015..YR2015. &lt;fct&gt; 34413603, 2880703, 39728025, 55812, 78011, 27884381, 9…</code></pre>
+<pre class="r"><code>sars &lt;- read.csv(&quot;SARS.csv&quot;, header = TRUE)
+glimpse(sars)</code></pre>
+<pre><code>## Observations: 2,538
+## Variables: 5
+## $ Date                         &lt;fct&gt; 2003-03-17, 2003-03-17, 2003-03-17, 2003…
+## $ Country                      &lt;fct&gt; &quot;Germany&quot;, &quot;Canada&quot;, &quot;Singapore&quot;, &quot;Hong …
+## $ Cumulative.number.of.case.s. &lt;int&gt; 1, 8, 20, 95, 2, 1, 40, 2, 8, 0, 23, 123…
+## $ Number.of.deaths             &lt;int&gt; 0, 2, 0, 1, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0…
+## $ Number.recovered             &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…</code></pre>
+<p>With all the corona virus happening worldwide, I wanted to study one previous disease that struck the world a few years ago and possibly find any correlations or factors that could possibly lead to an outbreak of a pandemic, which could hopefully give a clue to this current chaos with corona virus. The disease I chose is SARS, Severe Acute Respiratory Syndrome, which appeared in 2003. I used 3 dataset for this project. The dataset, SARS, is imported from Kaggle.com and this data has 5 variables, including date, country, number of deaths, recovery and cases. The other dataset, wb, is from World Bank. WB has 20 variables, 4 of which are series.name, series.code, country.name and country.code and the rest are years. The series.name lists 51 factors that could have affected in the outbreak of SARS. I intend to pick some factors from these 51 and find any correlation.</p>
+<div id="tidying" class="section level2">
+<h2>Tidying</h2>
+<pre class="r"><code>mywb &lt;- wb %&gt;% select(Country.Name, Series.Name, X2002..YR2002.)
+mywb &lt;- mywb %&gt;% pivot_wider(names_from = Series.Name, values_from = X2002..YR2002.)
+dim(mywb)</code></pre>
+<pre><code>## [1] 217  52</code></pre>
+<p>I chose 3 variables to look at, Series.Name, Country.Name and X2002..YR2002. I only intend to look at data from the year 2002, which is one year before the outbreak of SARS. I used pivot_wider function to make factors under Series.Name into separate columns.</p>
+</div>
+<div id="joiningmerging" class="section level2">
+<h2>Joining/Merging</h2>
+<pre class="r"><code>sarsfinal &lt;- sars %&gt;% group_by(Country) %&gt;% arrange(Country) %&gt;% 
+    mutate(n = n()) %&gt;% slice(n())
+view(sarsfinal)
+mywb &lt;- mywb %&gt;% rename(Country = Country.Name)
+mydata &lt;- mywb %&gt;% inner_join(sarsfinal, by = &quot;Country&quot;)
+view(mydata)</code></pre>
+<p>SARS dataset had cumulative data, so I selected the last data of each country and stored it as sarsfinal. Since mywb had country names under a variable named Country.Name, I renamed the variable name to Country so that I can use innerjoin function by Country. After fixing this, I used inner_join by Country to combine sarsfinal dataset and mywb. I stored this combined dataset into mydata and will be using this set for the following tasks.</p>
+</div>
+<div id="wrangling" class="section level2">
+<h2>Wrangling</h2>
+<pre class="r"><code># select, rename
+mydata &lt;- mydata %&gt;% select(Country, `Population, total`, `GDP (current US$)`, 
+    `Immunization, measles (% of children ages 12-23 months)`, 
+    Cumulative.number.of.case.s., Number.of.deaths, Number.recovered) %&gt;% 
+    rename(cumcase = Cumulative.number.of.case.s., deaths = Number.of.deaths, 
+        recovery = Number.recovered, gdp = `GDP (current US$)`, 
+        immunization = `Immunization, measles (% of children ages 12-23 months)`, 
+        ppn = `Population, total`)
+glimpse(mydata)</code></pre>
+<pre><code>## Observations: 35
+## Variables: 7
+## $ Country      &lt;chr&gt; &quot;Australia&quot;, &quot;Belgium&quot;, &quot;Brazil&quot;, &quot;Bulgaria&quot;, &quot;Canada&quot;, …
+## $ ppn          &lt;fct&gt; 19651400, 10332785, 179537520, 7837161, 31360079, 128040…
+## $ gdp          &lt;fct&gt; 3.95E+11, 2.57E+11, 5.08E+11, 16276456428, 7.58E+11, 1.4…
+## $ immunization &lt;fct&gt; 94, 82, 96, 92, 95, 85, 93, 96, 86, 94, .., 56, 72, 73, …
+## $ cumcase      &lt;int&gt; 5, 1, 1, 1, 250, 5327, 1, 1, 7, 10, 1755, 3, 2, 1, 4, 1,…
+## $ deaths       &lt;int&gt; 0, 0, 0, 0, 38, 348, 0, 0, 1, 0, 298, 0, 0, 0, 0, 0, 0, …
+## $ recovery     &lt;int&gt; 5, 0, 1, 0, 194, 4941, 1, 1, 6, 9, 1433, 3, 2, 1, 4, 0, …</code></pre>
+<pre class="r"><code>mydata &lt;- transform(mydata, ppn = as.numeric(ppn), gdp = as.numeric(gdp), 
+    immunization = as.numeric(immunization))
+
+# arrange, mutate
+mydata &lt;- mydata %&gt;% arrange(Country) %&gt;% mutate(prop.deaths = deaths/cumcase, 
+    prop.recovery = recovery/cumcase)
+glimpse(mydata)</code></pre>
+<pre><code>## Observations: 35
+## Variables: 9
+## $ Country       &lt;chr&gt; &quot;Australia&quot;, &quot;Belgium&quot;, &quot;Brazil&quot;, &quot;Bulgaria&quot;, &quot;Canada&quot;,…
+## $ ppn           &lt;dbl&gt; 2557, 1349, 2363, 6445, 4102, 1757, 4760, 5408, 5806, 6…
+## $ gdp           &lt;dbl&gt; 3959, 2741, 5181, 2195, 6136, 966, 7141, 975, 974, 2600…
+## $ immunization  &lt;dbl&gt; 6987, 6609, 7050, 6916, 7014, 6688, 6962, 7050, 6709, 6…
+## $ cumcase       &lt;int&gt; 5, 1, 1, 1, 250, 5327, 1, 1, 7, 10, 1755, 3, 2, 1, 4, 1…
+## $ deaths        &lt;int&gt; 0, 0, 0, 0, 38, 348, 0, 0, 1, 0, 298, 0, 0, 0, 0, 0, 0,…
+## $ recovery      &lt;int&gt; 5, 0, 1, 0, 194, 4941, 1, 1, 6, 9, 1433, 3, 2, 1, 4, 0,…
+## $ prop.deaths   &lt;dbl&gt; 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.15200…
+## $ prop.recovery &lt;dbl&gt; 1.0000000, 0.0000000, 1.0000000, 0.0000000, 0.7760000, …</code></pre>
+<pre class="r"><code># filter
+max.deaths &lt;- mydata %&gt;% filter(prop.deaths == max(prop.deaths))
+max.recovery &lt;- mydata %&gt;% filter(prop.recovery == max(prop.recovery))
+
+# grouping using mutate
+mydata &lt;- mydata %&gt;% mutate(region = fct_collapse(Country, Asia = c(&quot;Australia&quot;, 
+    &quot;China&quot;, &quot;Hong Kong SAR, China&quot;, &quot;India&quot;, &quot;Indonesia&quot;, &quot;Japan&quot;, 
+    &quot;South Korea&quot;, &quot;Kuwait&quot;, &quot;Macao SAR, China&quot;, &quot;Malaysia&quot;, 
+    &quot;Mongolia&quot;, &quot;New Zealand&quot;, &quot;Philippines&quot;, &quot;Singapore&quot;, &quot;Thailand&quot;), 
+    Africa = c(&quot;South Africa&quot;), Europe = c(&quot;Belgium&quot;, &quot;Bulgaria&quot;, 
+        &quot;Finland&quot;, &quot;France&quot;, &quot;Germany&quot;, &quot;Ireland&quot;, &quot;Italy&quot;, &quot;Poland&quot;, 
+        &quot;Romania&quot;, &quot;Russian Federation&quot;, &quot;Slovenia&quot;, &quot;Spain&quot;, 
+        &quot;Sweden&quot;, &quot;Switzerland&quot;, &quot;United Kingdom&quot;), America = c(&quot;Brazil&quot;, 
+        &quot;Canada&quot;, &quot;Colombia&quot;, &quot;United States&quot;)))
+glimpse(mydata)</code></pre>
+<pre><code>## Observations: 35
+## Variables: 10
+## $ Country       &lt;chr&gt; &quot;Australia&quot;, &quot;Belgium&quot;, &quot;Brazil&quot;, &quot;Bulgaria&quot;, &quot;Canada&quot;,…
+## $ ppn           &lt;dbl&gt; 2557, 1349, 2363, 6445, 4102, 1757, 4760, 5408, 5806, 6…
+## $ gdp           &lt;dbl&gt; 3959, 2741, 5181, 2195, 6136, 966, 7141, 975, 974, 2600…
+## $ immunization  &lt;dbl&gt; 6987, 6609, 7050, 6916, 7014, 6688, 6962, 7050, 6709, 6…
+## $ cumcase       &lt;int&gt; 5, 1, 1, 1, 250, 5327, 1, 1, 7, 10, 1755, 3, 2, 1, 4, 1…
+## $ deaths        &lt;int&gt; 0, 0, 0, 0, 38, 348, 0, 0, 1, 0, 298, 0, 0, 0, 0, 0, 0,…
+## $ recovery      &lt;int&gt; 5, 0, 1, 0, 194, 4941, 1, 1, 6, 9, 1433, 3, 2, 1, 4, 0,…
+## $ prop.deaths   &lt;dbl&gt; 0.00000000, 0.00000000, 0.00000000, 0.00000000, 0.15200…
+## $ prop.recovery &lt;dbl&gt; 1.0000000, 0.0000000, 1.0000000, 0.0000000, 0.7760000, …
+## $ region        &lt;fct&gt; Asia, Europe, America, Europe, America, Asia, America, …</code></pre>
+<pre class="r"><code># group_by, summarize
+stat.result &lt;- mydata %&gt;% group_by(region) %&gt;% summarize(cumcase.r = sum(cumcase), 
+    deaths.r = sum(deaths), recovery.r = sum(recovery), prop.deaths.r = deaths.r/cumcase.r, 
+    prop.recovery.r = recovery.r/cumcase.r, mean.cumcase = mean(cumcase), 
+    mean.recovery = mean(recovery), mean.deaths = mean(deaths), 
+    cor.cumcase.deaths = cor(cumcase, deaths), cor.cumcase.recovery = cor(cumcase, 
+        recovery), cor.deaths.recovery = cor(deaths, recovery), 
+    cor.cumcase.ppn = cor(cumcase, ppn), cor.cumcase.gdp = cor(cumcase, 
+        gdp))
+glimpse(stat.result)</code></pre>
+<pre><code>## Observations: 4
+## Variables: 14
+## $ region               &lt;fct&gt; Asia, Europe, America, Africa
+## $ cumcase.r            &lt;int&gt; 7342, 38, 327, 1
+## $ deaths.r             &lt;int&gt; 684, 1, 38, 1
+## $ recovery.r           &lt;int&gt; 6593, 31, 263, 0
+## $ prop.deaths.r        &lt;dbl&gt; 0.09316263, 0.02631579, 0.11620795, 1.00000000
+## $ prop.recovery.r      &lt;dbl&gt; 0.8979842, 0.8157895, 0.8042813, 0.0000000
+## $ mean.cumcase         &lt;dbl&gt; 489.466667, 2.533333, 81.750000, 1.000000
+## $ mean.recovery        &lt;dbl&gt; 439.533333, 2.066667, 65.750000, 0.000000
+## $ mean.deaths          &lt;dbl&gt; 45.60000000, 0.06666667, 9.50000000, 1.00000000
+## $ cor.cumcase.deaths   &lt;dbl&gt; 0.9146955, 0.4539479, 0.9548866, NA
+## $ cor.cumcase.recovery &lt;dbl&gt; 0.9992978, 0.9818544, 0.9988732, NA
+## $ cor.deaths.recovery  &lt;dbl&gt; 0.8989104, 0.4093276, 0.9397165, NA
+## $ cor.cumcase.ppn      &lt;dbl&gt; -0.2245394, 0.4839529, 0.2528683, NA
+## $ cor.cumcase.gdp      &lt;dbl&gt; -0.40513524, -0.29023535, 0.03247851, NA</code></pre>
+<pre class="r"><code># Correlation Matrix
+mydata %&gt;% select_if(is.numeric) %&gt;% cor %&gt;% as.data.frame %&gt;% 
+    rownames_to_column %&gt;% pivot_longer(-1) %&gt;% ggplot(aes(rowname, 
+    name, fill = value)) + geom_tile() + geom_text(aes(label = round(value, 
+    2))) + labs(title = &quot;Correlation Matrix&quot;) + scale_fill_gradient2(low = &quot;red&quot;, 
+    high = &quot;blue&quot;) + theme(axis.text.x = element_text(angle = 90))</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" />
+First of all, I used select function to only choose the variables that I’m interested in and then renamed them more precisely. The variables I intend to look at are cumulative number of cases (cumcase), number of deaths (deaths), number of recovery (recovery), gdp, immunization and total population (ppn). Since the data was not in numerical format, for later processes like correlation, I transformed the ppn, gdp and immunization variable to numerical variable. This was done using a transform function then I stored this new dataset to mydata. To organize the dataset by country, in alphabetical order, I used arrange function. Then I used mutate function to create two new variables called prop.deaths and prop.recovery, which show proportion of deaths and recovery in total number of SARS cases. There being 35 countries total, I wanted to group them by continent. I used mutate function to make variable region, under which are subgroups, Asia, Africa, Europe and America. And by group, I calculated sum, proportion, mean and also correlations using summarize function. Especially for correlation part, I found correlation between two variables, every possible combinations from mydata dataset.Using this correlation, I drew a correlation matrix. First of all, I had to make sure the data was numerical by using select_if (is.numeric). Once I made the correlation matrix, I used ggplot with geom_tile() to make the correlation matrix. Looking at the correlation matrix, there was a high correlation between cumcase and deaths (0.92).</p>
+<p>##Visualizing</p>
+<pre class="r"><code># Plots
+
+# Boxplot of Confirmed Cases for overall cases
+mydata %&gt;% filter(region != &quot;Africa&quot;) %&gt;% ggplot(aes(x = region, 
+    y = cumcase)) + geom_boxplot() + labs(title = &quot;Plot of confirmed cases for all countries&quot;, 
+    x = &quot;Region&quot;, y = &quot;No. Cases&quot;, caption = &quot;Africa is removed for only one observation.&quot;) + 
+    theme(plot.title = element_text(color = &quot;blue&quot;, size = 12, 
+        face = &quot;bold&quot;))</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Boxplot of Confirmed Cases
+mydata %&gt;% filter((region != &quot;Africa&quot;) &amp; (cumcase &lt; 100)) %&gt;% 
+    ggplot(aes(x = region, y = cumcase, fill = region)) + geom_boxplot(alpha = 0.7) + 
+    stat_summary(fun = mean, geom = &quot;point&quot;, shape = 20, size = 7, 
+        color = &quot;red&quot;, fill = &quot;red&quot;) + scale_fill_brewer(palette = &quot;Set1&quot;) + 
+    labs(title = &quot;Plot of confirmed cases with removing outliers &quot;, 
+        subtitle = &quot;Countries with less than 100 cases.&quot;, x = &quot;Region&quot;, 
+        y = &quot;No. Cases&quot;, caption = &quot;Africa is removed-only one observation.Red circle denotes mean.&quot;) + 
+    theme(plot.title = element_text(color = &quot;blue&quot;, size = 12, 
+        face = &quot;bold&quot;))</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-5-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Plot of deathrate
+stat.result %&gt;% na.omit() %&gt;% ggplot() + geom_bar(aes(x = region, 
+    y = prop.deaths.r, fill = region), stat = &quot;identity&quot;) + labs(title = &quot;Plot of deathrate among confirmed cases&quot;, 
+    x = &quot;Region&quot;, y = &quot;Deatrate&quot;, caption = &quot;Africa is removed.&quot;) + 
+    theme(plot.title = element_text(color = &quot;blue&quot;, size = 12, 
+        face = &quot;bold&quot;))</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-5-3.png" width="672" style="display: block; margin: auto;" />
+I made 3 plots, first one showing number of cumulative cases for SARS in each region. Since Africa had one case, I removed this data from the plot because this wasn’t a representative value and could distract the meaning of this overall plot. The second plot I made is a boxplot, with Africa data removed, as well. For this boxplot, to remove any outliers, I removed data whose number of cumulative cases was bigger than 100. Then I used ggplot and geom_boxplot to create boxplot for the countries with number of confirmed cases of SARS. The last plot I made was plot of death rates among the confirmed cases. Africa was removed in this plot as well.</p>
+<p>##PCA</p>
+<pre class="r"><code># Make correlation matrix
+mycorr &lt;- mydata %&gt;% select_if(is.numeric) %&gt;% na.omit %&gt;% select(-c(prop.deaths, 
+    prop.recovery)) %&gt;% cor %&gt;% round(2)
+sars_pca &lt;- princomp(mycorr)
+names(sars_pca)</code></pre>
+<pre><code>## [1] &quot;sdev&quot;     &quot;loadings&quot; &quot;center&quot;   &quot;scale&quot;    &quot;n.obs&quot;    &quot;scores&quot;   &quot;call&quot;</code></pre>
+<pre class="r"><code>summary(sars_pca, loadings = T)</code></pre>
+<pre><code>## Importance of components:
+##                           Comp.1    Comp.2    Comp.3      Comp.4       Comp.5
+## Standard deviation     1.0992314 0.4932065 0.4113276 0.044606991 1.427137e-03
+## Proportion of Variance 0.7446087 0.1499020 0.1042619 0.001226184 1.255108e-06
+## Cumulative Proportion  0.7446087 0.8945107 0.9987726 0.999998745 1.000000e+00
+##                        Comp.6
+## Standard deviation          0
+## Proportion of Variance      0
+## Cumulative Proportion       1
+## 
+## Loadings:
+##              Comp.1 Comp.2 Comp.3 Comp.4 Comp.5 Comp.6
+## ppn           0.155  0.785  0.193  0.480  0.278  0.123
+## gdp           0.240 -0.213 -0.801  0.390  0.299  0.119
+## immunization  0.264 -0.549  0.557  0.276  0.461  0.174
+## cumcase      -0.530 -0.114         0.374 -0.342  0.670
+## deaths       -0.542               -0.398  0.707  0.174
+## recovery     -0.524 -0.125         0.493        -0.679</code></pre>
+<pre class="r"><code># How many PCs to keep?
+eigval &lt;- sars_pca$sdev^2
+varprop = round(eigval/sum(eigval), 2)
+ggplot() + geom_bar(aes(y = varprop, x = 1:6), stat = &quot;identity&quot;) + 
+    xlab(&quot;&quot;) + geom_path(aes(y = varprop, x = 1:6)) + geom_text(aes(x = 1:6, 
+    y = varprop, label = round(varprop, 2)), vjust = 1, col = &quot;white&quot;, 
+    size = 5) + scale_y_continuous(breaks = seq(0, 0.6, 0.2), 
+    labels = scales::percent) + scale_x_continuous(breaks = 1:6) + 
+    labs(title = &quot;Scree Plot&quot;)</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Decide number of PCs as 3 from the previous scree plot See
+# the cumulative proportion of variance
+round(cumsum(eigval)/sum(eigval), 2)</code></pre>
+<pre><code>## Comp.1 Comp.2 Comp.3 Comp.4 Comp.5 Comp.6 
+##   0.74   0.89   1.00   1.00   1.00   1.00</code></pre>
+<pre class="r"><code># eigenvalues
+round(eigval, 2)</code></pre>
+<pre><code>## Comp.1 Comp.2 Comp.3 Comp.4 Comp.5 Comp.6 
+##   1.21   0.24   0.17   0.00   0.00   0.00</code></pre>
+<pre class="r"><code># See the components to interprete components
+summary(sars_pca, loadings = T)</code></pre>
+<pre><code>## Importance of components:
+##                           Comp.1    Comp.2    Comp.3      Comp.4       Comp.5
+## Standard deviation     1.0992314 0.4932065 0.4113276 0.044606991 1.427137e-03
+## Proportion of Variance 0.7446087 0.1499020 0.1042619 0.001226184 1.255108e-06
+## Cumulative Proportion  0.7446087 0.8945107 0.9987726 0.999998745 1.000000e+00
+##                        Comp.6
+## Standard deviation          0
+## Proportion of Variance      0
+## Cumulative Proportion       1
+## 
+## Loadings:
+##              Comp.1 Comp.2 Comp.3 Comp.4 Comp.5 Comp.6
+## ppn           0.155  0.785  0.193  0.480  0.278  0.123
+## gdp           0.240 -0.213 -0.801  0.390  0.299  0.119
+## immunization  0.264 -0.549  0.557  0.276  0.461  0.174
+## cumcase      -0.530 -0.114         0.374 -0.342  0.670
+## deaths       -0.542               -0.398  0.707  0.174
+## recovery     -0.524 -0.125         0.493        -0.679</code></pre>
+<pre class="r"><code># PC1 : all loadings/coefs have +sign for world bank data
+# which relects the economic status while negative sign for
+# the sars data.  Thus the higher the economic status is, the
+# stronger the PC1 is PC2: has positive sign only for
+# population size which implies the larger the population,
+# the PC2 is stronger.  PC3: the sum of ppn and immunizatin
+# is almost opposite of gpd.
+
+# Plot to see the contributions of variables to PCs
+
+# To PC1 and PC2
+sars_pca$loadings[1:6, 1:2] %&gt;% as.data.frame %&gt;% rownames_to_column %&gt;% 
+    ggplot() + geom_hline(aes(yintercept = 0), lty = 2) + geom_vline(aes(xintercept = 0), 
+    lty = 2) + ylab(&quot;PC2&quot;) + xlab(&quot;PC1&quot;) + geom_segment(aes(x = 0, 
+    y = 0, xend = Comp.1, yend = Comp.2), arrow = arrow(), col = &quot;red&quot;) + 
+    geom_label(aes(x = Comp.1 * 1.1, y = Comp.2 * 1.1, label = rowname)) + 
+    labs(title = &quot;Contribution of Variables to PCs&quot;)</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-6-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># ppn gdp immunization has positive value for PC1, while
+# deaths, cases, recovery has negative value for PC1
+# therefore economic factors determines value of PC1.
+
+# To PC2 and PC3
+sars_pca$loadings[1:6, 2:3] %&gt;% as.data.frame %&gt;% rownames_to_column %&gt;% 
+    ggplot() + geom_hline(aes(yintercept = 0), lty = 2) + geom_vline(aes(xintercept = 0), 
+    lty = 2) + ylab(&quot;PC3&quot;) + xlab(&quot;PC2&quot;) + geom_segment(aes(x = 0, 
+    y = 0, xend = Comp.2, yend = Comp.3), arrow = arrow(), col = &quot;red&quot;) + 
+    geom_label(aes(x = Comp.2 * 1.1, y = Comp.3 * 1.1, label = rowname)) + 
+    labs(title = &quot;Contribution of Variables to PCs&quot;)</code></pre>
+<p><img src="/project1_files/figure-html/unnamed-chunk-6-3.png" width="672" style="display: block; margin: auto;" />
+Most of the process are explained above, with the code. Plot interpretations will be written here. The plots show how different variables affect PC1, PC2 and PC3. To PC1 and PC2, ppn, immunization and gdp have positive value (effect) for PC1, while deaths, cases and recovery have negative value (effect) on PC1. Thus, I could conclude that economic factors have significant impact on PC1. To PC2 and PC3, ppn has positive effect on PC2, while immunization has positive effect on PC3 and gdp a negative effect on PC3.</p>
+</div>

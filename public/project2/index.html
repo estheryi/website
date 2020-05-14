@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Esther Yi" />
+    <meta name="description" content="Describe your website">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Project 2</title>
+    <meta name="generator" content="Hugo 0.70.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume_sds.pdf">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/project2/">Project 2</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          May 13, 2020
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<pre><code>## ── Attaching packages ─────────────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.3.0     ✓ purrr   0.3.3
+## ✓ tibble  2.1.3     ✓ dplyr   0.8.5
+## ✓ tidyr   1.0.2     ✓ stringr 1.4.0
+## ✓ readr   1.3.1     ✓ forcats 0.5.0</code></pre>
+<pre><code>## ── Conflicts ────────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(tidyverse)
+library(lmtest)</code></pre>
+<pre><code>## Loading required package: zoo</code></pre>
+<pre><code>## 
+## Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric</code></pre>
+<ol start="0" style="list-style-type: decimal">
+<li>Dataset<br />
+The dataset <code>CrohnD</code> is imported from the built-in (R) dataset in [<a href="https://vincentarelbundock.github.io/Rdatasets/datasets.html" class="uri">https://vincentarelbundock.github.io/Rdatasets/datasets.html</a>.] They were issued from a study of the adverse events of a drug on 117 patients who were affected by Crohn’s disease (chronic inflammatory disease of the intestines). The dataset has 117 observations on the 9 variables. I looked at 8 variables, not considering the variable <code>country</code>, for it does not have speicific explanation. The remaining eight variables are<br />
+</li>
+</ol>
+<ul>
+<li>ID: patient’s ID</li>
+<li>nrAdvE: number of adverse events<br />
+</li>
+<li>BMI: Body Mass Index<br />
+</li>
+<li>height<br />
+</li>
+<li>weight<br />
+</li>
+<li>sex</li>
+<li>age</li>
+<li>treat: how CD was treated with three levels placebo, drug1 and drug2.
+Among the 8 variables, sex and treat are categorical variables.</li>
+</ul>
+<pre class="r"><code>crohnd &lt;- read.csv(&quot;CrohnD.csv&quot;, header=T) %&gt;% as.data.frame()
+head(crohnd)</code></pre>
+<pre><code>##      ID nrAdvE   BMI height country sex age weight   treat
+## 1 19908      4 25.22    163      c1   F  47     67 placebo
+## 2 19909      4 23.80    164      c1   F  53     64      d1
+## 3 19910      1 23.05    164      c1   F  68     62 placebo
+## 4 20908      1 25.71    165      c1   F  48     70      d2
+## 5 20909      2 25.95    170      c1   F  67     75 placebo
+## 6 20910      2 28.70    168      c1   F  54     81      d1</code></pre>
+<pre class="r"><code>crohnd %&gt;% select(-1) %&gt;% select_if(is.numeric) %&gt;% scale %&gt;% cor %&gt;% round(3)</code></pre>
+<pre><code>##        nrAdvE    BMI height    age weight
+## nrAdvE  1.000  0.194 -0.232  0.103  0.025
+## BMI     0.194  1.000 -0.111  0.013  0.822
+## height -0.232 -0.111  1.000 -0.017  0.465
+## age     0.103  0.013 -0.017  1.000  0.011
+## weight  0.025  0.822  0.465  0.011  1.000</code></pre>
+<pre class="r"><code>dat1 &lt;- crohnd%&gt;% select(nrAdvE, BMI, age,weight,treat)
+dat1 &lt;- dat1 %&gt;% mutate(age_group=case_when(age&lt;40~&quot;young&quot;,
+                                    between(age, 40, 60)~&quot;middle&quot;,
+                                    age&gt;60~&quot;old&quot;))</code></pre>
+<ol style="list-style-type: decimal">
+<li>Since BMI, height and weight are highly correlated, I perform MANOVA testing whether means of nrAdvE, BMI or age differ acorss levels of treat.</li>
+</ol>
+<pre class="r"><code>man1 &lt;- manova(cbind(nrAdvE, BMI)~age_group, data=dat1)
+summary(man1)</code></pre>
+<pre><code>##            Df Pillai approx F num Df den Df  Pr(&gt;F)  
+## age_group   2 0.1043    3.136      4    228 0.01549 *
+## Residuals 114                                        
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>A one-way MANOVA was conducted to determine the effect of the age group (young, middle, old) on two dependent variables (nrAdvE and BMI).
+Under the asummption of bivariate normal distirbtion for each group (which will checked at later part of this question), significant differences were found among the three groups of age for at least one of the two dependent variables, approximate F(2, 114)=3.146 with p-value&lt;0.05.</p>
+<pre class="r"><code>summary.aov(man1)</code></pre>
+<pre><code>##  Response nrAdvE :
+##              Df Sum Sq Mean Sq F value Pr(&gt;F)
+## age_group     2  20.42 10.2085  1.3798 0.2558
+## Residuals   114 843.45  7.3987               
+## 
+##  Response BMI :
+##              Df  Sum Sq Mean Sq F value  Pr(&gt;F)  
+## age_group     2  204.89 102.447  4.3543 0.01506 *
+## Residuals   114 2682.17  23.528                  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<ul>
+<li>Univariate ANOVAs for each dependent variable were conducted as the above tests to the MANOVA, using the Bonferroni method for controlling Type 1 error rates for multiple comparisons.
+The univariate ANOVAs for nrAdvE was not significant, F(2,114)=1.3798, p-value&gt;0.05, while that for BMI was significant, F(2,114)=4.3543, p-value&lt;0.05.</li>
+</ul>
+<pre class="r"><code>dat1 %&gt;% group_by(age_group) %&gt;% summarize(mean(BMI), mean(nrAdvE))</code></pre>
+<pre><code>## # A tibble: 3 x 3
+##   age_group `mean(BMI)` `mean(nrAdvE)`
+##   &lt;chr&gt;           &lt;dbl&gt;          &lt;dbl&gt;
+## 1 middle           27.0           1.81
+## 2 old              25.0           2.68
+## 3 young            23.1           1.55</code></pre>
+<pre class="r"><code>pairwise.t.test(dat1$BMI, dat1$age_group, p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  dat1$BMI and dat1$age_group 
+## 
+##       middle old  
+## old   0.045  -    
+## young 0.013  0.262
+## 
+## P value adjustment method: none</code></pre>
+<ul>
+<li>Post hoc analysis was performed conducting pairwise comparisons to determine which age group differed in BMI.
+Without Bonferronie adjusting, the middle aged group was found to be significantly different from the other two age groups. But there was no significant difference between young and old age group.
+However after adjusting for multiple comparisions with Bonefrroni alpha=0.06/6=0.008, there were no significant difference between three groups.</li>
+</ul>
+<p>The tests performed were 1 MANOVA, 2 ANOVAs, and 3 t-test, thus the number of total tests were 6. The probability of at least one type I error is 0.265. By the Bonferroni correction, the adjusted significance level for each test is 0.05/6=‘r round(0.05/6, 3)’.</p>
+<ul>
+<li>eyeball assumptions: homogeneity of (co) variances</li>
+</ul>
+<pre class="r"><code># Eyeball the assumption of mulivariate normality
+ggplot(dat1,aes(x=sqrt(BMI),y=sqrt(nrAdvE)))+
+  geom_point(alpha=0.5)+geom_density_2d(h=2)+coord_fixed()+
+  facet_wrap(~age_group)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>#Eyeball assumptions: homogeneity of (co)variances
+covmat &lt;- dat1 %&gt;% 
+  transmute(sqBMI=sqrt(BMI), sqnrAdvE=sqrt(nrAdvE), age_group) %&gt;% group_by(age_group) %&gt;% do(covs=cov(.[1:2]))
+
+for(i in 1:3){print(as.character(covmat$age_group[i])); print(covmat$covs[i])}</code></pre>
+<pre><code>## [1] &quot;middle&quot;
+## [[1]]
+##              sqBMI  sqnrAdvE
+## sqBMI    0.2545402 0.1117369
+## sqnrAdvE 0.1117369 0.9696325
+## 
+## [1] &quot;old&quot;
+## [[1]]
+##               sqBMI   sqnrAdvE
+## sqBMI    0.14845988 0.09719698
+## sqnrAdvE 0.09719698 1.13536156
+## 
+## [1] &quot;young&quot;
+## [[1]]
+##                sqBMI    sqnrAdvE
+## sqBMI    0.102787336 0.005069862
+## sqnrAdvE 0.005069862 1.010842168</code></pre>
+<p>The original data does not meet the assumptions of multivariate normality and homogeneity of (co)variances. However after transforming with square root the data shows those assumptions even better.</p>
+<p>#—————-
+2. Perform some kind of randomization test on your data.</p>
+<pre class="r"><code>library(vegan)</code></pre>
+<pre><code>## Loading required package: permute</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>## This is vegan 2.5-6</code></pre>
+<pre class="r"><code>library(mvtnorm);library(ggExtra)
+dists &lt;- dat1 %&gt;% select(BMI,nrAdvE) %&gt;% dist()
+adonis(dists~age_group,data=dat1)</code></pre>
+<pre><code>## 
+## Call:
+## adonis(formula = dists ~ age_group, data = dat1) 
+## 
+## Permutation: free
+## Number of permutations: 999
+## 
+## Terms added sequentially (first to last)
+## 
+##            Df SumsOfSqs MeanSqs F.Model      R2 Pr(&gt;F)  
+## age_group   2     225.3 112.655  3.6427 0.06007  0.025 *
+## Residuals 114    3525.6  30.926         0.93993         
+## Total     116    3750.9                 1.00000         
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<ul>
+<li>Hypotheses
+<ul>
+<li>H_0: For both dependent variables (nrdAdvE and BMI), means for each age group are equal.<br />
+</li>
+<li>H_A: For at least one dependent variable, at least one age group mean is different.</li>
+</ul></li>
+<li><p>The permutational multivariate Analysis of Variance (PERMANOVA) was performed. The results found that there were significant differences among the three age groups for at at least one of nrdAdvE and BMI, F(2,114)=3.6427, p-value&lt;0.05.</p></li>
+<li><p>The bootstrapped distribution of F-statistic and the position of observed value of F there.</p></li>
+</ul>
+<pre class="r"><code># compute observed F
+SST &lt;- sum(dists^2)/117
+nobs &lt;- dat1 %&gt;% group_by(age_group) %&gt;% 
+        summarize(n=n()) %&gt;% select(n) %&gt;% pull
+SSW &lt;- dat1 %&gt;% select(age_group, nrAdvE, BMI)%&gt;% group_by(age_group)%&gt;%  
+  do(d = dist(.[2:3], &quot;euclidean&quot;)) %&gt;% ungroup() %&gt;% 
+  summarize(sum(d[[1]]^2)/nobs[1] + sum(d[[2]]^2)/nobs[2] +
+            sum(d[[3]]^2)/nobs[3]) %&gt;% pull
+F_obs &lt;- ((SST-SSW)/2)/(SSW/117)
+
+# compute null distribution for F
+Fs &lt;- replicate(1000,{
+  new &lt;- dat1 %&gt;% mutate(age_group=sample(age_group))
+  nobs &lt;- new %&gt;% group_by(age_group) %&gt;% 
+        summarize(n=n()) %&gt;% select(n) %&gt;% pull 
+  SSW &lt;- new %&gt;% select(age_group, nrAdvE, BMI)%&gt;% group_by(age_group)%&gt;%  
+  do(d = dist(.[2:3], &quot;euclidean&quot;)) %&gt;% ungroup() %&gt;% 
+  summarize(sum(d[[1]]^2)/nobs[1] + sum(d[[2]]^2)/nobs[2] +
+            sum(d[[3]]^2)/nobs[3]) %&gt;% pull
+  ((SST-SSW)/2)/(SSW/117)  
+  })
+{hist(Fs, prob=T); abline(v=F_obs, col=&quot;red&quot;)}</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-8-1.png" width="672" />
+# Regression</p>
+<pre class="r"><code>crohnd %&gt;% select_if(is.numeric) %&gt;% scale %&gt;% cov</code></pre>
+<pre><code>##                 ID      nrAdvE         BMI      height         age      weight
+## ID      1.00000000  0.13210817  0.02305205 -0.12582994  0.16522375 -0.04705399
+## nrAdvE  0.13210817  1.00000000  0.19378216 -0.23218055  0.10258602  0.02459476
+## BMI     0.02305205  0.19378216  1.00000000 -0.11054660  0.01286624  0.82220818
+## height -0.12582994 -0.23218055 -0.11054660  1.00000000 -0.01677566  0.46476125
+## age     0.16522375  0.10258602  0.01286624 -0.01677566  1.00000000  0.01072600
+## weight -0.04705399  0.02459476  0.82220818  0.46476125  0.01072600  1.00000000</code></pre>
+<pre class="r"><code>crohnd$age_group &lt;- dat1$age_group
+ggplot(crohnd) + geom_point(aes(y=BMI, x=weight))+
+  facet_wrap(~country)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-10-1.png" width="672" />
+The correlation between numerical variables tells that the variable BMI is highly correlated with weight.
+I would like to see if the effect of weight on BMI differed by the countries.
+First, all numerical variables are mean centered.</p>
+<pre class="r"><code>regdata &lt;- crohnd %&gt;% select(BMI, weight, country)
+regdata$weight_c &lt;- regdata$weight-mean(regdata$weight)
+fit &lt;- lm(BMI~weight_c*country, data=regdata)
+summary(fit)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = BMI ~ weight_c * country, data = regdata)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -4.5077 -1.4971 -0.2148  1.0710 17.4014 
+## 
+## Coefficients:
+##                    Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)        25.88551    0.31660  81.761   &lt;2e-16 ***
+## weight_c            0.25260    0.02369  10.664   &lt;2e-16 ***
+## countryc2           0.58259    0.54854   1.062   0.2905    
+## weight_c:countryc2  0.08810    0.03710   2.375   0.0192 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.795 on 113 degrees of freedom
+## Multiple R-squared:  0.6941, Adjusted R-squared:  0.686 
+## F-statistic: 85.48 on 3 and 113 DF,  p-value: &lt; 2.2e-16</code></pre>
+<ol style="list-style-type: decimal">
+<li>The interpretation of the coefficients</li>
+</ol>
+<p>The estimated regression is<br />
+hat {BMI} =25.886+0.2526 times weight_c +0.5826times country_2 +0.088 (weight_c times country_2) d
+* Intercept: Predicted BMI for an aveage weight, the patient from the country 2 is 25.89.</p>
+<ul>
+<li><p>weight_c ; The patient from the country 2 shows an increase of .253 in BMI for every 1kg increase in weight</p></li>
+<li><p>weight_c*country_2: The slope for BMI on weight is 0.088 greater for the patient from country 1 compared to the patient from country2 .
+– For the country 1,
+country_2=0: hat {BMI}<em>{conuntry1} =25.886+0.2526 weight_c<br />
+– For the country 2,
+country_2=1: hat {BMI}</em>{conuntry1} =26.4686+0.3406 weight_c .
+The estimate ofr an interaction 0.088 is a difference in slopes.
+It means the average increase in BMI of the patiens from the country 1 is .088 larger than that from the country 2 when patient weighs 1 kg more.</p></li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Plot the regression</li>
+</ol>
+<pre class="r"><code>ggplot(regdata, aes(x=weight_c, y=BMI, group=country))+
+  geom_point(aes(color=country))+
+  geom_smooth(method=&quot;lm&quot;, fullrange=T,se=F, aes(color=country))+
+  theme(legend.position=c(0.9,.19))+
+  ggtitle(&quot;Fitted Regression Line&quot;)</code></pre>
+<pre><code>## `geom_smooth()` using formula &#39;y ~ x&#39;</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-12-1.png" width="672" />
+3) Check assumptions of linearity, normality and homoskedasticity</p>
+<pre class="r"><code>resids &lt;- fit$residuals; fitvals &lt;- fit$fitted.values
+# normaliy test
+ks.test(resids,&quot;pnorm&quot;, sd=sd(resids))</code></pre>
+<pre><code>## Warning in ks.test(resids, &quot;pnorm&quot;, sd = sd(resids)): ties should not be present
+## for the Kolmogorov-Smirnov test</code></pre>
+<pre><code>## 
+##  One-sample Kolmogorov-Smirnov test
+## 
+## data:  resids
+## D = 0.11019, p-value = 0.1167
+## alternative hypothesis: two-sided</code></pre>
+<pre class="r"><code># equal variance test
+lmtest::bptest(fit)   #libray(lmtest)</code></pre>
+<pre><code>## 
+##  studentized Breusch-Pagan test
+## 
+## data:  fit
+## BP = 0.87385, df = 3, p-value = 0.8317</code></pre>
+<pre class="r"><code># check linearity
+ggplot()+geom_point(aes(fitvals, resids)) +
+  geom_hline(yintercept=0,col=&quot;red&quot;)+
+ggtitle(&quot;Residual Plot (residuals vs. fitted)&quot;)</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-13-1.png" width="672" />
+* The Kolmogorov-Smirnov test shows the residuals follow normal distribution (p-value&gt;0.10)<br />
+* The BP test shows the homoskedasticity of variances holds (p-value&gt;0.8).<br />
+* The residual plot shows no specific pattern around zero, which implies the linearity and equal variance.</p>
+<ol start="4" style="list-style-type: decimal">
+<li>Recompute regression results with robust standard errors</li>
+</ol>
+<pre class="r"><code>library(sandwich)     # needed for coeftest
+# uncorrected SEs
+sum1 &lt;- data.frame(summary(fit)$coef[,2:3])
+reg_coef &lt;- coef(fit)
+colnames(sum1)=c(&quot;SE_b&quot;, &quot;t_b&quot;)
+
+# corrected SEs
+sum2 &lt;- data.frame(coeftest(fit, vcov=vcovHC(fit))[,2:3] ) 
+colnames(sum2)=c(&quot;SE_a&quot;, &quot;t_a&quot;)
+
+round(cbind(reg_coef,sum1,sum2),3)</code></pre>
+<pre><code>##                    reg_coef  SE_b    t_b  SE_a    t_a
+## (Intercept)          25.886 0.317 81.761 0.341 75.853
+## weight_c              0.253 0.024 10.664 0.022 11.478
+## countryc2             0.583 0.549  1.062 0.521  1.119
+## weight_c:countryc2    0.088 0.037  2.375 0.036  2.465</code></pre>
+<p>The standard errors of all coeffcients except for intercept were reduced, by a little, and resulted in increase of the corresponding t-values. It increased little more than the significance of the estimated regression coefficients.</p>
+<ol start="5" style="list-style-type: decimal">
+<li>What proportion of the variation in the outcome does your model explain?</li>
+</ol>
+<pre class="r"><code>summary(fit)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = BMI ~ weight_c * country, data = regdata)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -4.5077 -1.4971 -0.2148  1.0710 17.4014 
+## 
+## Coefficients:
+##                    Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)        25.88551    0.31660  81.761   &lt;2e-16 ***
+## weight_c            0.25260    0.02369  10.664   &lt;2e-16 ***
+## countryc2           0.58259    0.54854   1.062   0.2905    
+## weight_c:countryc2  0.08810    0.03710   2.375   0.0192 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.795 on 113 degrees of freedom
+## Multiple R-squared:  0.6941, Adjusted R-squared:  0.686 
+## F-statistic: 85.48 on 3 and 113 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>The the coefficient of determination <span class="math inline">\(R^2=69\%\)</span>, it says about 69% of the variation in the BMI values is explained by the estimated regression line.</p>
+<p>##4. Rerun same regression model and compute bootstrapped standard errors.</p>
+<pre class="r"><code>boot_dat &lt;- sample_frac(regdata, replace=T)
+# repeat 5000
+samp_distn &lt;- replicate(5000,{
+  boot_dat &lt;- sample_frac(regdata, replace=T)
+  fit &lt;- lm(BMI~weight_c*country, data=boot_dat)
+  coef(fit)
+})
+
+# Estimated SEs
+SE_boot &lt;- samp_distn %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)
+t_boot &lt;- reg_coef/SE_boot
+sum_boot &lt;- t(rbind(SE_boot,t_boot))
+colnames(sum_boot) &lt;- c(&quot;SE_boot&quot;,&quot;t_boot&quot;)
+
+# Compare SEs and p-values
+round(cbind(reg_coef,sum1,sum2,sum_boot),3)</code></pre>
+<pre><code>##                    reg_coef  SE_b    t_b  SE_a    t_a SE_boot t_boot
+## (Intercept)          25.886 0.317 81.761 0.341 75.853   0.341 75.914
+## weight_c              0.253 0.024 10.664 0.022 11.478   0.022 11.497
+## countryc2             0.583 0.549  1.062 0.521  1.119   0.509  1.144
+## weight_c:countryc2    0.088 0.037  2.375 0.036  2.465   0.035  2.508</code></pre>
+<pre class="r"><code>pvalues &lt;- function(ydat) pt(as.numeric(ydat),113,lower.tail=F)
+pval_b &lt;- pvalues(sum1$t_b)
+pval_a &lt;- pvalues(sum2$t_a)
+pval_boot &lt;- pvalues(t_boot)
+
+sum_total &lt;- rbind(reg_coef,sum1[,1], sum2[,1], sum_boot[,1],pval_b, pval_a, pval_boot) %&gt;% round(4) %&gt;% t
+colnames(sum_total) &lt;- c(&quot;coef&quot;,&quot;SE_b&quot;, &quot;SE_a&quot;,&quot;SE_boot&quot;,&quot;p_b&quot;,&quot;p_a&quot;,&quot;p_boot&quot;)
+sum_total</code></pre>
+<pre><code>##                       coef   SE_b   SE_a SE_boot    p_b    p_a p_boot
+## (Intercept)        25.8855 0.3166 0.3413  0.3410 0.0000 0.0000 0.0000
+## weight_c            0.2526 0.0237 0.0220  0.0220 0.0000 0.0000 0.0000
+## countryc2           0.5826 0.5485 0.5206  0.5094 0.1452 0.1327 0.1276
+## weight_c:countryc2  0.0881 0.0371 0.0357  0.0351 0.0096 0.0076 0.0068</code></pre>
+<p>Standard errors are in descending order as we have uncorrected, corrected and bootstrapped the coefficients. Thus, the p-value was the smallest when bootstrapping was used.</p>
+<div id="peform-a-logistic-regression-predicting-a-binary-categorical-variable." class="section level1">
+<h1>5. Peform a logistic regression predicting a binary categorical variable.</h1>
+<p>Let the response variable be the country, and explantory variables be BMI, rnAdvE and age. If the patient were from the country 1, y is 1, or else y=0.</p>
+<pre class="r"><code>crohnd %&gt;% summarize_at(&quot;nrAdvE&quot;, .funs=mean)  #2.03</code></pre>
+<pre><code>##     nrAdvE
+## 1 2.034188</code></pre>
+<pre class="r"><code>logitdat &lt;- crohnd %&gt;% mutate_if(is.numeric,scale) %&gt;%
+  mutate(y=ifelse(country==&quot;c1&quot;, 1, 0))
+head(logitdat)</code></pre>
+<pre><code>##           ID      nrAdvE         BMI    height country sex         age
+## 1 -1.0396807  0.72035814 -0.16885562 0.0379444      c1   F -0.71800033
+## 2 -1.0396074  0.72035814 -0.45349108 0.1517776      c1   F -0.15545989
+## 3 -1.0395342 -0.37897102 -0.60382672 0.1517776      c1   F  1.25089120
+## 4 -0.9664363 -0.37897102 -0.07063633 0.2656108      c1   F -0.62424359
+## 5 -0.9663630 -0.01252797 -0.02252893 0.8347768      c1   F  1.15713446
+## 6 -0.9662898 -0.01252797  0.52870173 0.6071104      c1   F -0.06170315
+##        weight   treat age_group y
+## 1 -0.14221162 placebo    middle 1
+## 2 -0.35282883      d1    middle 1
+## 3 -0.49324031 placebo       old 1
+## 4  0.06840559      d2    middle 1
+## 5  0.41943428 placebo       old 1
+## 6  0.84066870      d1    middle 1</code></pre>
+<pre class="r"><code>fit1 &lt;- glm(y~nrAdvE+age, data=logitdat, family=binomial(link=&quot;logit&quot;))
+summary(fit1)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = y ~ nrAdvE + age, family = binomial(link = &quot;logit&quot;), 
+##     data = logitdat)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.0419  -1.2594   0.7565   0.8728   1.4534  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)   0.7385     0.2051   3.601 0.000317 ***
+## nrAdvE       -0.2933     0.1973  -1.486 0.137229    
+## age          -0.4303     0.2209  -1.947 0.051475 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 148.94  on 116  degrees of freedom
+## Residual deviance: 142.03  on 114  degrees of freedom
+## AIC: 148.03
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<pre class="r"><code>coeftest(fit1);exp(coef(fit1))</code></pre>
+<pre><code>## 
+## z test of coefficients:
+## 
+##             Estimate Std. Error z value  Pr(&gt;|z|)    
+## (Intercept)  0.73845    0.20508  3.6008 0.0003173 ***
+## nrAdvE      -0.29328    0.19734 -1.4862 0.1372294    
+## age         -0.43030    0.22095 -1.9475 0.0514751 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre><code>## (Intercept)      nrAdvE         age 
+##   2.0926933   0.7458139   0.6503153</code></pre>
+<ol style="list-style-type: decimal">
+<li>Interpret coefficient estimates in context<br />
+</li>
+</ol>
+<ul>
+<li><p>If a person has experienced another side-effect, cotrolling for age, the odds of the probability of his/her coming from country 1 multiplies by exp(-0.29)=0.746
+Thus odds of country 1 to country 2 decreases about 26% for additional occurrence of side-effect.</p></li>
+<li><p>If a person gets one year older, controlling for other variables, the odds of his/her from country 1 multiplies by exp(-0.43)=0.650. Thus odds of country 1 to country 2 decreases 35% for every year.</p></li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Report the confusion matrix</li>
+</ol>
+<pre class="r"><code>logitdat &lt;- logitdat %&gt;% mutate(prob=predict(fit1, type=&quot;response&quot;),
+                                prediction=ifelse(prob&gt;.5,1,0))
+classify &lt;- logitdat %&gt;% transmute(prob,prediction,truth=y)
+table(prediction=classify$prediction, truth=classify$truth) %&gt;% 
+  addmargins()</code></pre>
+<pre><code>##           truth
+## prediction   0   1 Sum
+##        0     5   4   9
+##        1    34  74 108
+##        Sum  39  78 117</code></pre>
+<div id="truth" class="section level2">
+<h2>| truth</h2>
+</div>
+<div id="prediction-0-1-sum" class="section level2">
+<h2>prediction | 0 | 1 | Sum</h2>
+<pre><code>   0    | 5  |  4 |   9
+   1    | 34 | 74 | 108</code></pre>
+<p>————|—-|—-|—–
+Sum | 39 | 78 | 117</p>
+<ol start="3" style="list-style-type: decimal">
+<li>Compute and discuss the Accuracy, sensitivity (TPR), Specificity (TNR), and Recall (PPR)</li>
+</ol>
+<ul>
+<li>The Accuracy: (5+74)/117=79/117=0.657.<br />
+– It is the proportion of predicting correctly among total patients.<br />
+</li>
+<li>Sensitivity (TPR):74/78=0.948.<br />
+– It is the proportion of predicting a patient coming from country 1 if the patient really is of country 1.<br />
+</li>
+<li>Specificity (TNR): 5/39=0.128.<br />
+– It is the proportion of predicting a patient from country 2 for the patient of country 2.<br />
+</li>
+<li>Recall (PPV): 74/108=0.685.
+– When a patient is classified as from country 1, PPV is the proprotion of the patient actually coming from the country 1.</li>
+</ul>
+<ol start="4" style="list-style-type: decimal">
+<li>Using ggplot, plot density of log-odds (logit) by binary outcome variable.</li>
+</ol>
+<pre class="r"><code>#density plot of logit
+logitdat$logit &lt;- predict(fit1,type=&quot;link&quot;)
+logitdat %&gt;% ggplot(aes(logit, color=country, fill=country))+geom_density(alpha=.4)+
+  theme(legend.position=c(.85,.85))+geom_vline(xintercept=0) +  
+  xlab(&quot;predictor(logit)&quot;)+geom_rug(aes(logit))</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<ol start="5" style="list-style-type: decimal">
+<li>Generate an ROC curve (plot) and calculate AUC and interpret.</li>
+</ol>
+<pre class="r"><code>library(plotROC)
+ROCplot &lt;- ggplot(classify)+geom_roc(aes(d=truth, m=prob), n.cuts=0)
+ROCplot</code></pre>
+<p><img src="/Project2_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<pre class="r"><code>calc_auc(ROCplot)</code></pre>
+<pre><code>##   PANEL group       AUC
+## 1     1    -1 0.6683103</code></pre>
+<p>The AUC 0.668 is the probability that a randomly selected person from country 1 has a higher predicted probability that than a randomly selected person from country 2.</p>
+<ol start="6" style="list-style-type: decimal">
+<li>Perform 10-fold CV and report average out-of-sample Accuracy, Sensitivity and Recall.</li>
+</ol>
+<pre class="r"><code>class_diag &lt;- function(probs, truth){
+  #Confusion matrix: calculate accuracy, TPR, TNR, PPV
+  tab &lt;- table(factor(probs&gt;.5, levels=c(&quot;FALSE&quot;,&quot;TRUE&quot;)),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[2]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  
+  if(is.numeric(truth)==FALSE &amp; is.logical(truth)==FALSE) truth&lt;as.numeric(truth)-1
+  
+  #Calculate exact AUC
+  ord &lt;- order(probs, decreasing=TRUE)
+  probs &lt;- probs[ord]; truth &lt;- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth))
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup &lt;- c(probs[-1]&gt;=probs[-length(probs)],FALSE)
+  TPR &lt;- c(0,TPR[!dup],1); FPR &lt;- c(0,FPR[!dup],1)
+  n &lt;- length(TPR)
+  auc &lt;- sum(   ((TPR[-1]+TPR[-n])/2)*(FPR[-1]-FPR[-n]) )
+  data.frame(acc,sens,spec,ppv,auc)
+} 
+#class_diag(logitdat$prob,logitdat$y)
+
+set.seed(1234)
+k=10  #number of folds
+
+data &lt;- logitdat[sample(nrow(logitdat)),]  #randomly order rows
+folds &lt;- cut(seq(1:nrow(logitdat)), breaks=k, labels=F) # create folds
+
+diags &lt;- NULL
+for (i in 1:k){
+  # create training and testing sets
+  train &lt;- data[folds!=i,]
+  test &lt;- data[folds==i,]
+  truth &lt;- test$y
+  
+  # Train model on training set (all but fold i)
+  fit &lt;- glm(y~nrAdvE+age, data=train, family=&quot;binomial&quot;)
+  # test model on test set (fold i)
+  probs &lt;- predict(fit,newdata=test, type=&quot;response&quot;)
+  
+  # get diagnostics for fold i
+  diags &lt;- rbind(diags, class_diag(probs, truth))
+}
+
+
+a.out &lt;- summarize_all(diags, mean) #average diagnostics across all k folds
+a.out</code></pre>
+<pre><code>##        acc     sens      spec      ppv      auc
+## 1 0.655303 0.944798 0.0511544 0.680303 0.653801</code></pre>
+<p>After performing 10-fold CV, the botained average out-of-sample Accuracy, Sensitity and Recall (PPV) is as follows.
+* Accuracy=0.655, Sensitivity=0.945 and Recall (PPV)=0.680</p>
+<p>##6. LAsSO adn CV<br />
+1) Choose one variable you want to predict and run a LASSO regression inputing all the rest of your variables as predictors. Choose lambda to give the simplest model howse accuracy is near that of the best (i.e., lambda.1se).</p>
+<pre class="r"><code>library(glmnet)</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## 
+## Attaching package: &#39;Matrix&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
+## 
+##     expand, pack, unpack</code></pre>
+<pre><code>## Loaded glmnet 3.0-2</code></pre>
+<pre class="r"><code>data &lt;- crohnd %&gt;% 
+  select(nrAdvE,BMI,weight,height,sex,age,treat,country) %&gt;% 
+  mutate(sex=if_else(sex==&quot;F&quot;,1,0), 
+         country=if_else(country==&quot;c1&quot;,1,0),
+         treat=case_when(treat==&quot;d2&quot;~2,
+                         treat==&quot;d1&quot;~1,
+                         treat==&quot;placebo&quot;~0))
+y &lt;- as.matrix(data$country)
+x &lt;- data %&gt;% select(-country) %&gt;% 
+  mutate_all(scale) %&gt;% as.matrix
+
+head(x)</code></pre>
+<pre><code>##           nrAdvE         BMI      weight    height       sex         age
+## [1,]  0.72035814 -0.16885562 -0.14221162 0.0379444 0.4105448 -0.71800033
+## [2,]  0.72035814 -0.45349108 -0.35282883 0.1517776 0.4105448 -0.15545989
+## [3,] -0.37897102 -0.60382672 -0.49324031 0.1517776 0.4105448  1.25089120
+## [4,] -0.37897102 -0.07063633  0.06840559 0.2656108 0.4105448 -0.62424359
+## [5,] -0.01252797 -0.02252893  0.41943428 0.8347768 0.4105448  1.15713446
+## [6,] -0.01252797  0.52870173  0.84066870 0.6071104 0.4105448 -0.06170315
+##        treat
+## [1,] -1.2195
+## [2,]  0.0000
+## [3,] -1.2195
+## [4,]  1.2195
+## [5,] -1.2195
+## [6,]  0.0000</code></pre>
+<pre class="r"><code>cv &lt;- cv.glmnet(x,y)
+cv</code></pre>
+<pre><code>## 
+## Call:  cv.glmnet(x = x, y = y) 
+## 
+## Measure: Mean-Squared Error 
+## 
+##      Lambda Measure      SE Nonzero
+## min 0.02501  0.2255 0.01047       4
+## 1se 0.09201  0.2262 0.01279       0</code></pre>
+<ul>
+<li>I selected the variable <code>country</code> as a response variable to predict. The best lambda giving the simplest model is 0.090.</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Discuss which variables are retained.</li>
+</ol>
+<pre class="r"><code>lasso1 &lt;- glmnet(x,y,lambda=cv$lambda.1se)
+coef(lasso1)</code></pre>
+<pre><code>## 8 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                        s0
+## (Intercept)  6.666667e-01
+## nrAdvE       .           
+## BMI          .           
+## weight       .           
+## height       .           
+## sex          .           
+## age         -6.570190e-17
+## treat        .</code></pre>
+<p>The output tells that the age is the most important predictor of country.</p>
+<ol start="3" style="list-style-type: decimal">
+<li>Perform the 10-fold CV using this model and compare with the previous model.</li>
+</ol>
+<pre class="r"><code>set.seed(1234)
+k=10  # number of folds
+
+crohnd &lt;- crohnd %&gt;% mutate(country=if_else(country==&quot;c1&quot;,1,0))
+data1 &lt;- crohnd[sample(nrow(crohnd)),]  
+folds &lt;- cut(seq(1:nrow(crohnd)), breaks=k, labels=F)
+
+diags &lt;- NULL
+for (i in 1:k) {
+  train &lt;- data1[folds!=i,]
+  test &lt;- data1[folds==i,]
+  truth &lt;- test$country
+  fit &lt;- glm(country~age, data=train, family=&quot;binomial&quot;)
+  probs &lt;- predict(fit,newdata=test, type=&quot;response&quot;)
+  diags &lt;- rbind(diags, class_diag(probs, truth))
+}
+diags %&gt;% summarize_all(mean)</code></pre>
+<pre><code>##         acc      sens  spec       ppv       auc
+## 1 0.6651515 0.9763889 0.025 0.6727273 0.6624729</code></pre>
+<p>accuracy increased to 0.665</p>
+</div>
+</div>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1589423883985.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3227220217",
+    "id" : "989DED60",
+    "lastKnownWriteTime" : 1589425706,
+    "last_content_update" : 1589425706499,
+    "path" : "~/Desktop/project3/content/blog/2020-05-13-basic-python-using-regular-expressions.Rmd",
+    "project_path" : "content/blog/2020-05-13-basic-python-using-regular-expressions.Rmd",
+    "properties" : {
+        "cursorPosition" : "36,80",
+        "scrollLine" : "30"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

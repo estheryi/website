@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Portfolio</title>
+    <link>/</link>
+    <description>Recent content on Portfolio</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Wed, 13 May 2020 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Basic Python: using regular expressions</title>
+      <link>/blog/basic-python-using-regular-expressions/</link>
+      <pubDate>Wed, 13 May 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/blog/basic-python-using-regular-expressions/</guid>
+      <description>Using re.findall(), match all IP addressses in this string (string2)
+import re string2=&amp;quot;Jan 13 00:48:59: DROP service 68-&amp;gt;67(udp) from 213.92.153.167 to 69.43.107.219, prefix: \&amp;quot;spoof iana-0/8\&amp;quot; \ (in: eth0 69.43.112.233(38:f8:b7:90:45:92):68 -&amp;gt; 217.70.100.113(00:21:87:79:9c:d9):67 UDP len:576 ttl:64) \ Jan 13 12:02:48: ACCEPT service dns from 74.125.186.208 to firewall(pub-nic-dns), prefix: \&amp;quot;none\&amp;quot; \ (in: eth0 74.125.186.208(00:1a:e3:52:5d:8e):36008 -&amp;gt; 140.105.63.158(00:1a:9a:86:2e:62):53 UDP len:82 ttl:38) \ Jan 13 17:44:52: DROP service 68-&amp;gt;67(udp) from 172.45.240.237 to 217.70.177.60, prefix: \&amp;quot;spoof iana-0/8\&amp;quot; \ (in: eth0 216.</description>
+    </item>
+    
+    <item>
+      <title>Project 1: Data Wrangling and Exploratory Analysis</title>
+      <link>/project1/</link>
+      <pubDate>Wed, 13 May 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/project1/</guid>
+      <description>tinytex::install_tinytex() library(tidyverse) library(ggplot2) library(dplyr) library(forcats) # data wb &amp;lt;- read.csv(&amp;quot;worldbank.csv&amp;quot;, header = TRUE) glimpse(wb) ## Observations: 11,067 ## Variables: 20 ## $ Series.Name &amp;lt;fct&amp;gt; &amp;quot;Population, total&amp;quot;, &amp;quot;Population, total&amp;quot;, &amp;quot;Population,… ## $ Series.Code &amp;lt;fct&amp;gt; SP.POP.TOTL, SP.POP.TOTL, SP.POP.TOTL, SP.POP.TOTL, SP… ## $ Country.Name &amp;lt;fct&amp;gt; &amp;quot;Afghanistan&amp;quot;, &amp;quot;Albania&amp;quot;, &amp;quot;Algeria&amp;quot;, &amp;quot;American Samoa&amp;quot;,… ## $ Country.Code &amp;lt;fct&amp;gt; AFG, ALB, DZA, ASM, AND, AGO, ATG, ARG, ARM, ABW, AUS,… ## $ X2000..YR2000. &amp;lt;fct&amp;gt; 20779953, 3089027, 31042235, 57821, 65390, 16395473, 7… ## $ X2001.</description>
+    </item>
+    
+    <item>
+      <title>Project 2</title>
+      <link>/project2/</link>
+      <pubDate>Wed, 13 May 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/project2/</guid>
+      <description>## ── Attaching packages ─────────────────────────────────────────── tidyverse 1.3.0 ── ## ✓ ggplot2 3.3.0 ✓ purrr 0.3.3 ## ✓ tibble 2.1.3 ✓ dplyr 0.8.5 ## ✓ tidyr 1.0.2 ✓ stringr 1.4.0 ## ✓ readr 1.3.1 ✓ forcats 0.5.0 ## ── Conflicts ────────────────────────────────────────────── tidyverse_conflicts() ── ## x dplyr::filter() masks stats::filter() ## x dplyr::lag() masks stats::lag() library(tidyverse) library(lmtest) ## Loading required package: zoo ## ## Attaching package: &amp;#39;zoo&amp;#39; ## The following objects are masked from &amp;#39;package:base&amp;#39;: ## ## as.</description>
+    </item>
+    
+    <item>
+      <title>Projects</title>
+      <link>/projects/</link>
+      <pubDate>Sun, 02 Oct 2016 22:55:05 -0400</pubDate>
+      
+      <guid>/projects/</guid>
+      <description>Projects using R
+-Data Wrangling and Exploratory Analysis: used data regarding SARS outbreak and data from World Bank; tried to find correlations between the outbreak of SARS and various factors
+-Modeling, Inference, Prediction: statistical modeling using Crohn disease data (chronic inflammatory disease of the intestines)</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,416 @@
+---
+title: "Project 2"
+author: "Esther Yi"
+date: "2020-05-13"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+library(tidyverse)
+library(lmtest)
+```
+
+
+0. Dataset   
+The dataset `CrohnD` is imported from the built-in (R) dataset in [https://vincentarelbundock.github.io/Rdatasets/datasets.html.] They were issued from a study of the adverse events of a drug on 117 patients who were affected by Crohn's disease (chronic inflammatory disease of the intestines). The dataset has 117 observations on the 9 variables. I looked at 8 variables, not considering the variable `country`, for it does not have speicific explanation. The remaining eight variables are   
+* ID: patient's ID
+* nrAdvE: number of adverse events  
+* BMI: Body Mass Index   
+* height  
+* weight  
+* sex
+* age
+* treat: how CD was treated with three levels placebo, drug1 and drug2.
+Among the 8 variables, sex and treat are categorical variables.
+
+```{r}
+crohnd <- read.csv("CrohnD.csv", header=T) %>% as.data.frame()
+head(crohnd)
+```
+
+```{r Corr}
+crohnd %>% select(-1) %>% select_if(is.numeric) %>% scale %>% cor %>% round(3)
+
+dat1 <- crohnd%>% select(nrAdvE, BMI, age,weight,treat)
+dat1 <- dat1 %>% mutate(age_group=case_when(age<40~"young",
+                                    between(age, 40, 60)~"middle",
+                                    age>60~"old"))
+```
+
+1. Since BMI, height and weight are highly correlated, I perform MANOVA testing whether means of nrAdvE, BMI or age  differ acorss levels of treat.
+```{r MANOVA}
+man1 <- manova(cbind(nrAdvE, BMI)~age_group, data=dat1)
+summary(man1)
+```
+A one-way MANOVA was conducted to determine the effect of the age group (young, middle, old) on two dependent variables (nrAdvE and BMI). 
+Under the asummption of bivariate normal distirbtion for each group (which will checked at later part of this question), significant differences were found among the three groups of age for at least one of the two dependent variables, approximate F(2, 114)=3.146 with p-value<0.05.
+
+```{r}
+summary.aov(man1)
+```
+* Univariate ANOVAs for each dependent variable were conducted as the above tests to the MANOVA, using the Bonferroni method for controlling Type 1 error rates for multiple comparisons. 
+The univariate ANOVAs for nrAdvE was not significant, F(2,114)=1.3798, p-value>0.05, while that for BMI was significant, F(2,114)=4.3543, p-value<0.05.
+
+```{r}
+dat1 %>% group_by(age_group) %>% summarize(mean(BMI), mean(nrAdvE))
+pairwise.t.test(dat1$BMI, dat1$age_group, p.adj="none")
+```
+* Post hoc analysis was performed conducting pairwise comparisons to determine which age group differed in BMI. 
+Without Bonferronie adjusting, the middle aged group was found to be significantly different from the other two age groups. But there was no significant difference between young and old age group. 
+However after adjusting for multiple comparisions with Bonefrroni alpha=0.06/6=0.008, there were no significant difference between three groups.
+
+The tests performed were 1 MANOVA, 2 ANOVAs, and 3 t-test, thus the number of total tests were 6. The probability of at least one type I error is `r round( 1-.95^6, 3)`. By the Bonferroni correction, the adjusted significance level for each test is 0.05/6='r round(0.05/6, 3)'. 
+
+* eyeball assumptions: homogeneity of (co) variances
+```{r}
+# Eyeball the assumption of mulivariate normality
+ggplot(dat1,aes(x=sqrt(BMI),y=sqrt(nrAdvE)))+
+  geom_point(alpha=0.5)+geom_density_2d(h=2)+coord_fixed()+
+  facet_wrap(~age_group)
+
+#Eyeball assumptions: homogeneity of (co)variances
+covmat <- dat1 %>% 
+  transmute(sqBMI=sqrt(BMI), sqnrAdvE=sqrt(nrAdvE), age_group) %>% group_by(age_group) %>% do(covs=cov(.[1:2]))
+
+for(i in 1:3){print(as.character(covmat$age_group[i])); print(covmat$covs[i])}
+```
+The original data does not meet the assumptions of multivariate normality and homogeneity of (co)variances. However after transforming with square root the data shows those assumptions even better.
+
+#----------------
+2. Perform some kind of randomization test on your data.
+```{r}
+library(vegan)
+library(mvtnorm);library(ggExtra)
+dists <- dat1 %>% select(BMI,nrAdvE) %>% dist()
+adonis(dists~age_group,data=dat1)
+```
+* Hypotheses  
+  - H_0: For both dependent variables (nrdAdvE and BMI), means for each age group are equal.   
+  - H_A: For at least one dependent variable, at least one age group mean is different.
+  
+* The permutational multivariate Analysis of Variance (PERMANOVA) was performed. The results found that there were significant differences among the three age groups for at at least one of nrdAdvE and BMI, F(2,114)=3.6427, p-value<0.05. 
+
+* The bootstrapped distribution of F-statistic and the position of observed value of F there.
+```{r}
+# compute observed F
+SST <- sum(dists^2)/117
+nobs <- dat1 %>% group_by(age_group) %>% 
+        summarize(n=n()) %>% select(n) %>% pull
+SSW <- dat1 %>% select(age_group, nrAdvE, BMI)%>% group_by(age_group)%>%  
+  do(d = dist(.[2:3], "euclidean")) %>% ungroup() %>% 
+  summarize(sum(d[[1]]^2)/nobs[1] + sum(d[[2]]^2)/nobs[2] +
+            sum(d[[3]]^2)/nobs[3]) %>% pull
+F_obs <- ((SST-SSW)/2)/(SSW/117)
+
+# compute null distribution for F
+Fs <- replicate(1000,{
+  new <- dat1 %>% mutate(age_group=sample(age_group))
+  nobs <- new %>% group_by(age_group) %>% 
+        summarize(n=n()) %>% select(n) %>% pull 
+  SSW <- new %>% select(age_group, nrAdvE, BMI)%>% group_by(age_group)%>%  
+  do(d = dist(.[2:3], "euclidean")) %>% ungroup() %>% 
+  summarize(sum(d[[1]]^2)/nobs[1] + sum(d[[2]]^2)/nobs[2] +
+            sum(d[[3]]^2)/nobs[3]) %>% pull
+  ((SST-SSW)/2)/(SSW/117)  
+  })
+{hist(Fs, prob=T); abline(v=F_obs, col="red")}
+```
+# Regression
+```{r}
+crohnd %>% select_if(is.numeric) %>% scale %>% cov
+```
+```{r}
+crohnd$age_group <- dat1$age_group
+ggplot(crohnd) + geom_point(aes(y=BMI, x=weight))+
+  facet_wrap(~country)
+```
+The correlation between numerical variables tells that the variable BMI is highly correlated with weight. 
+I would like to see if the effect of weight on BMI differed by the countries.
+First, all numerical variables are mean centered.
+```{r}
+regdata <- crohnd %>% select(BMI, weight, country)
+regdata$weight_c <- regdata$weight-mean(regdata$weight)
+fit <- lm(BMI~weight_c*country, data=regdata)
+summary(fit)
+```
+1) The interpretation of the coefficients
+
+The estimated regression is  
+hat {BMI} =25.886+0.2526 times weight_c +0.5826times country_2 +0.088 (weight_c times country_2) d
+* Intercept: Predicted BMI for an aveage weight, the patient from the country 2 is 25.89.
+
+* weight_c ; The patient from the country 2 shows an increase of .253 in BMI for every 1kg increase in weight
+
+* weight_c*country_2: The slope for BMI on weight is 0.088 greater for the patient from country 1 compared to the patient from country2 .
+ -- For the country 1, 
+country_2=0: hat {BMI}_{conuntry1} =25.886+0.2526 weight_c     
+ -- For the country 2, 
+country_2=1: hat {BMI}_{conuntry1} =26.4686+0.3406 weight_c .
+The estimate ofr an interaction 0.088 is a difference in slopes. 
+It means the average increase in BMI of the patiens from the country 1 is .088 larger than that from the country 2 when patient weighs 1 kg more.
+
+2) Plot the regression 
+```{r}
+ggplot(regdata, aes(x=weight_c, y=BMI, group=country))+
+  geom_point(aes(color=country))+
+  geom_smooth(method="lm", fullrange=T,se=F, aes(color=country))+
+  theme(legend.position=c(0.9,.19))+
+  ggtitle("Fitted Regression Line")
+
+```
+3) Check assumptions of linearity, normality and homoskedasticity
+```{r}
+resids <- fit$residuals; fitvals <- fit$fitted.values
+# normaliy test
+ks.test(resids,"pnorm", sd=sd(resids))
+# equal variance test
+lmtest::bptest(fit)   #libray(lmtest)
+# check linearity
+ggplot()+geom_point(aes(fitvals, resids)) +
+  geom_hline(yintercept=0,col="red")+
+ggtitle("Residual Plot (residuals vs. fitted)")
+```
+* The Kolmogorov-Smirnov test shows the residuals follow normal distribution (p-value>0.10)  
+* The BP test shows the homoskedasticity of variances holds (p-value>0.8).  
+* The residual plot shows no specific pattern around zero, which implies the linearity and equal variance.
+
+4) Recompute regression results with robust standard errors
+```{r}
+library(sandwich)     # needed for coeftest
+# uncorrected SEs
+sum1 <- data.frame(summary(fit)$coef[,2:3])
+reg_coef <- coef(fit)
+colnames(sum1)=c("SE_b", "t_b")
+
+# corrected SEs
+sum2 <- data.frame(coeftest(fit, vcov=vcovHC(fit))[,2:3] ) 
+colnames(sum2)=c("SE_a", "t_a")
+
+round(cbind(reg_coef,sum1,sum2),3)
+```
+The standard errors of all coeffcients except for intercept were reduced, by a little, and resulted in increase of the corresponding t-values. It increased little more than the significance of the estimated regression coefficients.
+
+5) What proportion of the variation in the outcome does your model explain?
+```{r}
+summary(fit)
+```
+The the coefficient of determination $R^2=69\%$, it says about 69% of the variation in the BMI values is explained by the estimated regression line.
+
+##4. Rerun same regression model and compute bootstrapped standard errors.
+```{r}
+boot_dat <- sample_frac(regdata, replace=T)
+# repeat 5000
+samp_distn <- replicate(5000,{
+  boot_dat <- sample_frac(regdata, replace=T)
+  fit <- lm(BMI~weight_c*country, data=boot_dat)
+  coef(fit)
+})
+
+# Estimated SEs
+SE_boot <- samp_distn %>% t %>% as.data.frame %>% summarize_all(sd)
+t_boot <- reg_coef/SE_boot
+sum_boot <- t(rbind(SE_boot,t_boot))
+colnames(sum_boot) <- c("SE_boot","t_boot")
+
+# Compare SEs and p-values
+round(cbind(reg_coef,sum1,sum2,sum_boot),3)
+pvalues <- function(ydat) pt(as.numeric(ydat),113,lower.tail=F)
+pval_b <- pvalues(sum1$t_b)
+pval_a <- pvalues(sum2$t_a)
+pval_boot <- pvalues(t_boot)
+
+sum_total <- rbind(reg_coef,sum1[,1], sum2[,1], sum_boot[,1],pval_b, pval_a, pval_boot) %>% round(4) %>% t
+colnames(sum_total) <- c("coef","SE_b", "SE_a","SE_boot","p_b","p_a","p_boot")
+sum_total
+```
+Standard errors are in descending order as we have uncorrected, corrected and bootstrapped the coefficients. Thus, the p-value was the smallest when bootstrapping was used.
+
+# 5. Peform a logistic regression predicting a binary categorical variable.
+Let the response variable be the country, and explantory variables be BMI, rnAdvE and age. If the patient were from the country 1, y is 1, or else y=0.
+```{r}
+crohnd %>% summarize_at("nrAdvE", .funs=mean)  #2.03
+logitdat <- crohnd %>% mutate_if(is.numeric,scale) %>%
+  mutate(y=ifelse(country=="c1", 1, 0))
+head(logitdat)
+fit1 <- glm(y~nrAdvE+age, data=logitdat, family=binomial(link="logit"))
+summary(fit1)
+coeftest(fit1);exp(coef(fit1))
+```
+1) Interpret coefficient estimates in context    
+* If a person has experienced another side-effect, cotrolling for age, the odds of the probability of his/her coming from country 1 multiplies by exp(-0.29)=0.746
+Thus odds of country 1 to country 2 decreases about 26% for additional occurrence of side-effect.
+
+* If a person gets one year older, controlling for other variables, the odds of his/her from country 1 multiplies by exp(-0.43)=0.650. Thus odds of country 1 to country 2 decreases 35% for every year.
+
+
+2) Report the confusion matrix
+```{r}
+logitdat <- logitdat %>% mutate(prob=predict(fit1, type="response"),
+                                prediction=ifelse(prob>.5,1,0))
+classify <- logitdat %>% transmute(prob,prediction,truth=y)
+table(prediction=classify$prediction, truth=classify$truth) %>% 
+  addmargins()
+```
+            | truth
+----------------------------
+prediction  | 0  |  1 | Sum
+----------------------------
+       0    | 5  |  4 |   9
+       1    | 34 | 74 | 108
+------------|----|----|-----
+       Sum  | 39 | 78 | 117
+
+3) Compute and discuss the Accuracy, sensitivity (TPR), Specificity (TNR), and Recall (PPR)
+* The Accuracy: (5+74)/117=79/117=0.657.   
+  -- It is the proportion of predicting correctly among total patients.  
+* Sensitivity (TPR):74/78=0.948.   
+  -- It is the proportion of predicting a patient coming from  country 1 if the patient really is of country 1.   
+* Specificity (TNR): 5/39=0.128.  
+  -- It is the proportion of predicting a patient from country 2 for the patient of country 2.   
+* Recall (PPV): 74/108=0.685. 
+  -- When a patient is classified as from country 1, PPV is the proprotion of the patient actually coming from the country 1.
+
+
+4) Using ggplot, plot density of log-odds (logit) by binary outcome variable.
+```{r}
+#density plot of logit
+logitdat$logit <- predict(fit1,type="link")
+logitdat %>% ggplot(aes(logit, color=country, fill=country))+geom_density(alpha=.4)+
+  theme(legend.position=c(.85,.85))+geom_vline(xintercept=0) +  
+  xlab("predictor(logit)")+geom_rug(aes(logit))
+```
+
+
+5) Generate an ROC curve (plot) and calculate AUC and interpret.
+```{r}
+library(plotROC)
+ROCplot <- ggplot(classify)+geom_roc(aes(d=truth, m=prob), n.cuts=0)
+ROCplot
+calc_auc(ROCplot)
+```
+The AUC 0.668 is the probability that a randomly selected person from country 1 has a higher predicted probability that than a randomly selected person from country 2. 
+
+6) Perform 10-fold CV and report average out-of-sample Accuracy, Sensitivity and Recall.
+```{r}
+class_diag <- function(probs, truth){
+  #Confusion matrix: calculate accuracy, TPR, TNR, PPV
+  tab <- table(factor(probs>.5, levels=c("FALSE","TRUE")),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[2]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<as.numeric(truth)-1
+  
+  #Calculate exact AUC
+  ord <- order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth))
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup <- c(probs[-1]>=probs[-length(probs)],FALSE)
+  TPR <- c(0,TPR[!dup],1); FPR <- c(0,FPR[!dup],1)
+  n <- length(TPR)
+  auc <- sum(   ((TPR[-1]+TPR[-n])/2)*(FPR[-1]-FPR[-n]) )
+  data.frame(acc,sens,spec,ppv,auc)
+} 
+#class_diag(logitdat$prob,logitdat$y)
+
+set.seed(1234)
+k=10  #number of folds
+
+data <- logitdat[sample(nrow(logitdat)),]  #randomly order rows
+folds <- cut(seq(1:nrow(logitdat)), breaks=k, labels=F) # create folds
+
+diags <- NULL
+for (i in 1:k){
+  # create training and testing sets
+  train <- data[folds!=i,]
+  test <- data[folds==i,]
+  truth <- test$y
+  
+  # Train model on training set (all but fold i)
+  fit <- glm(y~nrAdvE+age, data=train, family="binomial")
+  # test model on test set (fold i)
+  probs <- predict(fit,newdata=test, type="response")
+  
+  # get diagnostics for fold i
+  diags <- rbind(diags, class_diag(probs, truth))
+}
+
+
+a.out <- summarize_all(diags, mean) #average diagnostics across all k folds
+a.out
+```  
+
+After performing 10-fold CV, the botained average out-of-sample Accuracy, Sensitity and Recall (PPV)  is as follows.
+* Accuracy=0.655, Sensitivity=0.945 and Recall (PPV)=0.680
+
+##6. LAsSO adn CV  
+1) Choose one variable you want to predict and run a LASSO regression inputing all the rest of your variables as predictors. Choose lambda to give the simplest model howse accuracy is near that of the best (i.e., lambda.1se).
+
+```{r}
+library(glmnet)
+data <- crohnd %>% 
+  select(nrAdvE,BMI,weight,height,sex,age,treat,country) %>% 
+  mutate(sex=if_else(sex=="F",1,0), 
+         country=if_else(country=="c1",1,0),
+         treat=case_when(treat=="d2"~2,
+                         treat=="d1"~1,
+                         treat=="placebo"~0))
+y <- as.matrix(data$country)
+x <- data %>% select(-country) %>% 
+  mutate_all(scale) %>% as.matrix
+
+head(x)
+
+cv <- cv.glmnet(x,y)
+cv
+```
+* I selected the variable `country` as a response variable to predict. The best lambda giving the simplest model is 0.090.
+
+2) Discuss which variables are retained.
+```{r}
+lasso1 <- glmnet(x,y,lambda=cv$lambda.1se)
+coef(lasso1)
+```
+The output tells that the age is the most important predictor of country.
+
+3) Perform the 10-fold CV using this model and compare with the previous model.
+```{r}
+set.seed(1234)
+k=10  # number of folds
+
+crohnd <- crohnd %>% mutate(country=if_else(country=="c1",1,0))
+data1 <- crohnd[sample(nrow(crohnd)),]  
+folds <- cut(seq(1:nrow(crohnd)), breaks=k, labels=F)
+
+diags <- NULL
+for (i in 1:k) {
+  train <- data1[folds!=i,]
+  test <- data1[folds==i,]
+  truth <- test$country
+  fit <- glm(country~age, data=train, family="binomial")
+  probs <- predict(fit,newdata=test, type="response")
+  diags <- rbind(diags, class_diag(probs, truth))
+}
+diags %>% summarize_all(mean)
+```
+accuracy increased to 0.665
+
+
+
+  
+  
