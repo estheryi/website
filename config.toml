@@ -20,7 +20,7 @@ theme = "hugo-sustain"
   custom_js  = []
 
 [params.social]
-  Github        = "username"
+  Github        = "estheryi"
   Email         = "estheryi@utexas.edu"
 
 ## Main Menu
